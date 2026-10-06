@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>동사 포켓몬 도감</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* 레이아웃: 입장 = 도감 그리드 → 포켓몬 클릭 = 3문제 → 포획. 규칙은 '게임 설명' 모달, 오답은 왼쪽 아래 서랍 */
+:root{color-scheme:light;
+  --page:#ffffff; --soft:#f5f6f9; --ink:#1f2640; --muted:#666f8c; --line:#e1e5ef;
+  --be:#2f6be0; --be-soft:#e5edfd; --gen:#e27a16; --gen-soft:#fdeedd;
+  --subj:#1f8f66; --subj-soft:#def3e9; --bad:#d4475e; --bad-soft:#fce6ea; --gold:#f5bd1f;
+  --f:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.5}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:820px;margin:0 auto;padding-inline:16px;padding-block:24px 96px;display:flex;flex-direction:column;gap:18px}
+
+/* 헤더 */
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:clamp(26px,5.5vw,36px);font-weight:900;letter-spacing:-.02em}
+h1 .b{color:var(--be)} h1 .g{color:var(--gen)}
+.hright{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.prog{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.meter{width:120px;height:10px;border-radius:6px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--be),var(--gen))}
+.help{border:2px solid var(--ink);background:var(--page);border-radius:999px;padding:7px 16px;font-weight:700}
+.help:hover{background:var(--ink);color:#fff}
+.lead{margin:0;color:var(--muted)}
+
+/* 도감 */
+.dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px}
+.mon{border:2px solid var(--line);border-radius:18px;background:var(--page);padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;transition:transform .12s,border-color .12s,box-shadow .12s}
+.mon:hover{transform:translateY(-4px);border-color:var(--ink);box-shadow:0 6px 0 var(--line)}
+.mon.have{border-color:var(--gold);background:linear-gradient(180deg,#fff9e6,#fff 60%)}
+.mon .pic{width:96px;height:96px;display:grid;place-items:center}
+.mon img{width:96px;height:96px;object-fit:contain}
+.mon:not(.have) img{filter:brightness(0);opacity:.16}
+.mon .no{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.mon .nm{font-weight:800;font-size:16px}
+.mon .cnt{position:absolute;top:8px;right:10px;font-size:12px;font-weight:800;color:#b07d00}
+.mon .go{font-size:12px;color:var(--muted)}
+.qmark{width:72px;height:72px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:28px;font-weight:800;color:var(--muted)}
+
+/* 퀴즈 */
+.quiz{border:2px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:16px}
+.qtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.back{border:0;background:var(--soft);border-radius:10px;padding:6px 12px;font-weight:700;font-size:14px}
+.target{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0}
+.target img{width:56px;height:56px;object-fit:contain}
+.target.wild img{filter:brightness(0);opacity:.25}
+.target b{display:block;font-size:17px}
+.target small{color:var(--muted);font-size:13.5px}
+.dots{display:flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.dots i.ok{background:var(--subj)} .dots i.no{background:var(--bad)} .dots i.now{outline:2px solid var(--ink);outline-offset:2px}
+.ask{margin:0;font-size:19px;font-weight:800}
+.ko{align-self:center;font-size:clamp(24px,5.5vw,34px);font-weight:800;padding:16px 26px;border-radius:18px;border:2px solid var(--line);background:var(--soft);text-align:center}
+.ko u{text-decoration-thickness:3px;text-underline-offset:6px}
+.ko.be{border-color:var(--be);background:var(--be-soft)} .ko.gen{border-color:var(--gen);background:var(--gen-soft)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pickbtn{border-radius:16px;border:2px solid;padding:16px 8px;font-size:19px;font-weight:800}
+.pickbtn small{display:block;font-size:13.5px;font-weight:600;opacity:.85}
+.pickbtn.b{background:var(--be-soft);border-color:var(--be);color:var(--be)}
+.pickbtn.g{background:var(--gen-soft);border-color:var(--gen);color:var(--gen)}
+.pickbtn:hover:not(:disabled){transform:translateY(-2px)}
+.pickbtn:disabled{opacity:.5;cursor:default}
+
+.sent{display:flex;flex-wrap:wrap;gap:10px 8px;justify-content:center;align-items:flex-start}
+.tok{display:flex;flex-direction:column;align-items:center;gap:3px;max-width:160px}
+.w{font-weight:600;font-size:clamp(20px,4.6vw,27px);padding:5px 13px;border-radius:12px;border:2px solid var(--line);background:var(--soft);line-height:1.3}
+.w.s{background:var(--subj-soft);border-color:var(--subj);color:var(--subj)}
+.w.be{background:var(--be-soft);border-color:var(--be);color:var(--be)}
+.w.gen{background:var(--gen-soft);border-color:var(--gen);color:var(--gen)}
+.w.blank{border-style:dashed;min-width:84px;text-align:center;color:var(--muted);background:var(--page)}
+button.w:hover:not(:disabled){border-color:var(--ink)}
+button.w:disabled{cursor:default}
+.w.x{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.mean{border:0;background:none;font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:2px;padding:0 2px}
+.mean:hover{color:var(--be)}
+.meant{font-size:12.5px;color:var(--be);text-align:center;line-height:1.35}
+.meant a{color:var(--muted);font-size:11.5px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.opt{font-size:21px;font-weight:700;padding:9px 22px;border-radius:14px;border:2px solid var(--line);background:var(--page)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt:disabled{opacity:.5;cursor:default}
+.okb{align-self:center;font-weight:700;padding:9px 18px;border-radius:12px;border:2px dashed var(--subj);background:var(--subj-soft);color:var(--subj)}
+.okb:disabled{opacity:.5;cursor:default}
+
+.fb{border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.fb.good{background:var(--subj-soft);border:2px solid var(--subj)}
+.fb.oops{background:var(--bad-soft);border:2px solid var(--bad)}
+.fb b{font-size:18px} .fb.good b{color:var(--subj)} .fb.oops b{color:var(--bad)}
+.fb p{margin:0}
+.next{align-self:flex-end;font-weight:800;font-size:17px;padding:10px 22px;border-radius:14px;border:0;background:var(--ink);color:#fff}
+.result{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding-block:8px}
+.result h2{margin:0;font-size:26px}
+.result img{width:150px;height:150px;object-fit:contain;filter:brightness(0);opacity:.2}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ghost{font-weight:700;padding:10px 20px;border-radius:14px;border:2px solid var(--line);background:var(--page)}
+
+/* 다시 볼 문제 서랍 (왼쪽 아래) */
+.drawer{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:calc(100vw - 32px)}
+.dbtn{border:0;border-radius:999px;padding:10px 16px;background:var(--bad);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(212,71,94,.35)}
+.dpanel{width:340px;max-width:100%;max-height:min(60vh,520px);overflow:auto;background:var(--page);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(31,38,64,.15)}
+.dpanel h3{margin:0;font-size:17px}
+.note{border-left:4px solid var(--bad);background:var(--soft);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.note .q{font-weight:700;font-size:15px}
+.note .m{color:var(--muted)}
+
+/* 게임 설명 모달 */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(20,24,44,.5);display:grid;place-items:center;padding:16px}
+.card{background:var(--page);border-radius:22px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
+.card h2{margin:0;font-size:22px}
+.card h3{margin:0;font-size:15px;color:var(--muted);font-weight:700}
+.card p,.card ol{margin:0}
+.card ol{padding-left:20px;display:flex;flex-direction:column;gap:2px}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rules div{border-radius:14px;padding:10px 12px;font-size:14px}
+.rules strong{display:block;font-size:16px}
+.rules .rb{background:var(--be-soft);border:2px solid var(--be)} .rules .rb strong{color:var(--be)}
+.rules .rg{background:var(--gen-soft);border:2px solid var(--gen)} .rules .rg strong{color:var(--gen)}
+.rules .law{grid-column:1/-1;text-align:center;border:2px dashed var(--line);font-weight:700}
+.cardbtns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin:0}
+
+/* 포획 연출 */
+.catch{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(20,24,44,.75),rgba(10,12,24,.93) 70%);cursor:pointer;animation:fadein .2s ease}
+.catch .burst{position:absolute;width:min(130vw,900px);aspect-ratio:1;background:repeating-conic-gradient(from 0deg,var(--gold) 0 10deg,transparent 10deg 20deg);
+  -webkit-mask:radial-gradient(circle,#000 0 30%,transparent 62%);mask:radial-gradient(circle,#000 0 30%,transparent 62%);opacity:.5;animation:spin 6s linear infinite}
+.catch .in{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;color:#fff;padding-inline:16px}
+.catch .new{font-weight:900;font-size:22px;letter-spacing:.1em;color:#1f2640;background:var(--gold);padding:4px 16px;border-radius:999px;animation:pop .5s .25s both}
+.catch img{width:min(62vw,300px);height:auto;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35));animation:slam .6s cubic-bezier(.2,1.6,.4,1) both}
+.catch .pno{font-weight:700;opacity:.85;font-size:15px;font-variant-numeric:tabular-nums}
+.catch .pnm{font-size:clamp(34px,8vw,52px);font-weight:900;line-height:1.1;animation:pop .45s .15s both}
+.catch .tap{font-size:13px;opacity:.7;margin-top:6px}
+@keyframes slam{0%{transform:scale(0) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadein{from{opacity:0}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes wob{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.wob{animation:wob .3s ease}
+@media (prefers-reduced-motion:reduce){.catch,.catch *,.wob{animation:none!important}}
+@media (max-width:520px){.rules,.two{grid-template-columns:1fr}.quiz{padding:14px}.dex{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.mon .pic,.mon img{width:76px;height:76px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="b">동사</span> <span class="g">포켓몬</span> 도감</h1>
+    <div class="hright">
+      <span class="prog">도감 <span id="cnt">0 / 15</span><span class="meter"><i id="bar" style="width:0"></i></span></span>
+      <button class="help" id="helpBtn">게임 설명 듣기</button>
+    </div>
+  </header>
+
+  <section id="dexView">
+    <p class="lead" id="lead">잡고 싶은 포켓몬을 눌러 봐! 문제 3개 중 2개를 맞히면 도감에 등록돼.</p>
+    <div class="dex" id="dex" style="margin-top:14px"></div>
+  </section>
+
+  <section class="quiz" id="quizView" hidden aria-live="polite"></section>
+
+  <p class="foot">포켓몬 정보·이미지: PokéAPI (pokeapi.co) · Pokémon © Nintendo / Creatures / GAME FREAK · 비상업적 수업용<br>도감 기록은 이 기기 브라우저에만 저장돼요.</p>
+</div>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="dpanel" id="dpanel" hidden>
+    <h3>다시 볼 문제</h3>
+    <div id="notes" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+  <button class="dbtn" id="dbtn">다시 볼 문제 <span id="ncnt">0</span></button>
+</div>
+
+<div class="modal" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="card">
+    <h2 id="helpTitle">게임 설명</h2>
+    <div><h3>이 게임은?</h3><p>영어 문장을 만들 때 <b>be동사</b>를 쓸지, <b>일반동사</b>를 쓸지 고르는 연습이에요.</p></div>
+    <div><h3>포켓몬 잡는 법</h3>
+      <ol><li>도감에서 잡고 싶은 포켓몬을 눌러요.</li><li>문제 3개 중 2개 이상 맞히면 포획!</li><li>틀린 문제는 왼쪽 아래 '다시 볼 문제'에 모여요.</li></ol></div>
+    <div><h3>언제 어떤 동사를 쓸까?</h3></div>
+    <div class="rules">
+      <div class="rb"><strong>be동사</strong>am · is · are · was · were<br>기분·모습·신분·위치를 말할 때<br><small>행복하다, 귀엽다, 학생이다, ~에 있다</small></div>
+      <div class="rg"><strong>일반동사</strong>play · like · eat · go …<br>몸이나 마음으로 하는 행동<br><small>축구를 하다, 피자를 좋아하다</small></div>
+      <div class="law">한 문장에 동사는 하나만!</div>
+    </div>
+    <div class="cardbtns"><button class="ghost" id="speak">소리로 듣기</button><button class="next" id="helpClose">알겠어!</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.random()*a.length|0];
+const DICT=w=>"https://en.dict.naver.com/#/search?query="+encodeURIComponent(w);
+
+/* ── 포켓몬 15마리 (PokéAPI) ── */
+const IDS=[1,4,7,25,37,39,52,54,77,133,143,258,390,393,501];
+const KO={1:"이상해씨",4:"파이리",7:"꼬부기",25:"피카츄",37:"식스테일",39:"푸린",52:"나옹",54:"고라파덕",77:"포니타",133:"이브이",143:"잠만보",258:"물짱이",390:"불꽃숭이",393:"팽도리",501:"수댕이"};
+const ART=id=>"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png";
+const MON={};IDS.forEach(id=>MON[id]={nm:KO[id],img:ART(id)});
+const no=id=>"No."+String(id).padStart(3,"0");
+async function loadPokemon(){
+  await Promise.all(IDS.map(async id=>{
+    try{
+      const pk=await fetch("https://pokeapi.co/api/v2/pokemon/"+id).then(r=>{if(!r.ok)throw 0;return r.json()});
+      MON[id].img=pk.sprites.other["official-artwork"].front_default||MON[id].img;
+      const sp=await fetch("https://pokeapi.co/api/v2/pokemon-species/"+id).then(r=>r.json());
+      const ko=sp.names.find(n=>n.language.name==="ko");if(ko)MON[id].nm=ko.name;
+    }catch(e){/* API가 막히면 PokéAPI 이미지 저장소 주소와 기본 이름 사용 */}
+  }));
+  renderDex();
+}
+
+/* ── 단어 뜻 ── */
+const GL={i:"나",you:"너, 너희",he:"그",she:"그녀",we:"우리",they:"그들",my:"나의",the:"그 (정해진 것)",a:"하나의",
+ cats:"고양이들",brother:"남자 형제",student:"학생",happy:"행복한",today:"오늘",soccer:"축구",after:"~ 후에",school:"학교",pizza:"피자",very:"매우",cute:"귀여운",
+ to:"~로, ~에",every:"매 ~, 모든",day:"날, 하루",english:"영어",morning:"아침",best:"가장 좋은",friend:"친구",yesterday:"어제",tired:"피곤한",piano:"피아노",
+ dog:"개",fast:"빠르게",teacher:"선생님",tv:"텔레비전",lunch:"점심",classroom:"교실",in:"~ 안에",pencil:"연필",tall:"키가 큰",
+ am:"~이다 (I와 함께)",is:"~이다 (he·she·it과 함께)",are:"~이다 (you·we·they와 함께)",was:"~이었다",were:"~이었다 (여럿)",
+ play:"놀다, 경기하다",plays:"놀다, 경기하다",like:"좋아하다",likes:"좋아하다",eat:"먹다",go:"가다",goes:"가다",have:"가지다",has:"가지다",
+ study:"공부하다",watch:"보다",watches:"보다",run:"달리다",runs:"달리다"};
+const key=w=>w.toLowerCase().replace(/[^a-z]/g,"");
+const BE=new Set(["am","is","are","was","were"]);
+const VERBS=new Set(["play","plays","like","likes","eat","go","goes","have","has","study","watch","watches","run","runs"]);
+const opened=new Set();
+function tok(word,cls,btnAttrs){
+  const k=key(word),id="m"+Math.random().toString(36).slice(2,8);
+  const mean=GL[k]?(opened.has(word+cls)?`<span class="meant">${esc(GL[k])}<br><a href="${DICT(k)}" target="_blank" rel="noopener">사전·발음</a></span>`
+    :`<button class="mean" data-mean="${esc(word+cls)}">뜻</button>`):"";
+  const el=btnAttrs!==undefined?`<button class="w ${cls}" ${btnAttrs}>${esc(word)}</button>`:`<span class="w ${cls}">${esc(word)}</span>`;
+  return `<span class="tok">${el}${mean}</span>`;
+}
+const words=s=>s.split(" ").filter(Boolean);
+
+/* ── 문제 ── */
+const WHEN=[
+ {ko:"나는 학생<u>이다</u>.",en:["I","am","a student."],t:"be",why:"'~이다'는 내가 누구인지(신분)를 말해요 → be동사"},
+ {ko:"그녀는 <u>행복하다</u>.",en:["She","is","happy."],t:"be",why:"'행복하다'는 '하다'로 끝나도 기분(상태)이에요 → be동사"},
+ {ko:"그는 교실에 <u>있다</u>.",en:["He","is","in the classroom."],t:"be",why:"어디에 '있다'(위치) → be동사"},
+ {ko:"우리는 축구를 <u>한다</u>.",en:["We","play","soccer."],t:"gen",why:"몸을 움직이는 행동 → 일반동사"},
+ {ko:"나는 피자를 <u>좋아한다</u>.",en:["I","like","pizza."],t:"gen",why:"'피자를'처럼 '무엇을'이 붙는 마음의 행동 → 일반동사"},
+ {ko:"고양이들은 <u>귀엽다</u>.",en:["The cats","are","cute."],t:"be",why:"'귀엽다'는 모습(상태) → be동사"},
+ {ko:"나는 연필을 <u>가지고 있다</u>.",en:["I","have","a pencil."],t:"gen",why:"'있다'가 붙어도 '가지다'라는 행동 → 일반동사 have"},
+ {ko:"그는 매일 학교에 <u>간다</u>.",en:["He","goes","to school every day."],t:"gen",why:"학교로 움직이는 행동 → 일반동사"},
+ {ko:"나는 어제 <u>피곤했다</u>.",en:["I","was","tired yesterday."],t:"be",why:"피곤한 상태 + 지난 일 → be동사 was"},
+ {ko:"그들은 점심을 <u>먹는다</u>.",en:["They","eat","lunch."],t:"gen",why:"'점심을 먹다'는 행동 → 일반동사"},
+ {ko:"너는 키가 <u>크다</u>.",en:["You","are","tall."],t:"be",why:"'키가 크다'는 모습(상태) → be동사"},
+ {ko:"그녀는 TV를 <u>본다</u>.",en:["She","watches","TV."],t:"gen",why:"'TV를 보다'는 행동 → 일반동사"}
+];
+const FILL=[
+ {s:"I",r:"a student.",o:["am","play","am play"],a:"am",why:"'학생'이라는 신분 → be동사 am"},
+ {s:"She",r:"happy today.",o:["is","likes","is like"],a:"is",why:"'행복한' 기분 → be동사 is"},
+ {s:"We",r:"soccer after school.",o:["play","are","are play"],a:"play",why:"축구를 '하는' 행동 → 일반동사 play"},
+ {s:"He",r:"pizza.",o:["likes","is","is likes"],a:"likes",why:"피자를 '좋아하는' 행동 → 일반동사 (He라서 likes)"},
+ {s:"My cats",r:"very cute.",o:["are","like","are like"],a:"are",why:"'귀여운' 모습 → be동사, 여럿이라 are"},
+ {s:"My brother",r:"to school every day.",o:["goes","is","is goes"],a:"goes",why:"학교에 '가는' 행동 → 일반동사 goes"},
+ {s:"I",r:"English every morning.",o:["study","am","am study"],a:"study",why:"영어를 '공부하는' 행동 → 일반동사 study"},
+ {s:"You",r:"my best friend.",o:["are","have","are have"],a:"are",why:"'제일 친한 친구'라는 관계 → be동사 are"},
+ {s:"Yesterday, I",r:"tired.",o:["was","am","was eat"],a:"was",why:"어제 피곤했던 상태 → be동사 was"}
+];
+const FIX=[
+ {w:["I","am","like","pizza."],bad:1,fix:"I like pizza.",why:"like(일반동사)가 있으니 am은 빼야 해요."},
+ {w:["She","is","plays","the","piano."],bad:1,fix:"She plays the piano.",why:"plays(일반동사)와 is(be동사)가 같이 있었어요."},
+ {w:["They","are","happy."],bad:-1,fix:"They are happy.",why:"be동사 are 하나뿐! 바른 문장이에요."},
+ {w:["We","are","study","English."],bad:1,fix:"We study English.",why:"study(일반동사)가 있으니 are는 빼야 해요."},
+ {w:["He","is","my","teacher."],bad:-1,fix:"He is my teacher.",why:"be동사 is 하나뿐! 바른 문장이에요."},
+ {w:["My","dog","is","runs","fast."],bad:2,fix:"My dog runs fast.",why:"runs(일반동사)와 is(be동사)가 같이 있었어요."},
+ {w:["I","watch","TV."],bad:-1,fix:"I watch TV.",why:"일반동사 watch 하나뿐! 바른 문장이에요."},
+ {w:["They","were","eat","lunch."],bad:1,fix:"They eat lunch.",why:"eat(일반동사)가 있으니 were는 빼야 해요."}
+];
+const vcls=w=>BE.has(key(w))?"be":VERBS.has(key(w))?"gen":"";
+
+/* ── 저장 ── */
+let coll={};
+try{coll=JSON.parse(localStorage.getItem("verbDex")||"{}")||{}}catch(e){coll={}}
+const save=()=>{try{localStorage.setItem("verbDex",JSON.stringify(coll))}catch(e){}};
+let notes=[];
+
+/* ── 도감 ── */
+function renderDex(){
+  const total=IDS.filter(id=>coll[id]).length;
+  $("#cnt").textContent=`${total} / ${IDS.length}`;$("#bar").style.width=total/IDS.length*100+"%";
+  $("#lead").textContent=total===IDS.length?"도감 완성! 진짜 포켓몬 마스터야. 또 잡으러 가 볼까?":"잡고 싶은 포켓몬을 눌러 봐! 문제 3개 중 2개를 맞히면 도감에 등록돼.";
+  $("#dex").innerHTML=IDS.map(id=>{const h=!!coll[id],m=MON[id];
+    return `<button class="mon ${h?"have":""}" data-id="${id}" aria-label="${h?m.nm:"아직 못 잡은 포켓몬"} ${no(id)}">
+    ${h?`<span class="cnt">×${coll[id]}</span>`:""}<span class="pic"><img src="${m.img}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'qmark',textContent:'?'}))"></span>
+    <span class="no">${no(id)}</span><span class="nm">${h?esc(m.nm):"???"}</span><span class="go">${h?"또 잡기":"잡으러 가기"}</span></button>`}).join("");
+}
+
+/* ── 퀴즈 ── */
+let st=null;
+function start(id){
+  const w=pick(WHEN),f=pick(FILL),x=pick(FIX);
+  st={id,qs:shuffle([{type:"when",...w},{type:"fill",...f,order:shuffle(f.o)},{type:"fix",...x}]),i:0,res:[],answered:false,fb:"",done:false};
+  opened.clear();
+  $("#dexView").hidden=true;$("#quizView").hidden=false;renderQuiz();window.scrollTo({top:0});
+}
+function toDex(){st=null;$("#quizView").hidden=true;$("#dexView").hidden=false;renderDex();}
+
+function renderQuiz(){
+  const m=MON[st.id],have=!!coll[st.id];
+  const head=`<div class="qtop"><button class="back" id="back">← 도감</button>
+   <div class="target ${have?"":"wild"}"><img src="${m.img}" alt=""><div><b>${have?esc(m.nm)+" 또 잡기":"야생의 "+no(st.id)+" 등장!"}</b><small>3문제 중 2개를 맞히면 포획</small></div></div>
+   <div class="dots" aria-label="진행">${[0,1,2].map(k=>`<i class="${st.res[k]===true?"ok":st.res[k]===false?"no":""} ${k===st.i&&!st.done?"now":""}"></i>`).join("")}</div></div>`;
+  if(st.done) return $("#quizView").innerHTML=head+failView();
+  const q=st.qs[st.i],A=st.answered;let body="";
+  if(q.type==="when"){
+    body=`<p class="ask">영어로 말할 때 어떤 동사가 필요할까?</p>
+    <div class="ko ${A?q.t:""}">${q.ko}</div>
+    ${A?`<div class="sent">${tok(q.en[0],"s")}${tok(q.en[1],q.t)}${words(q.en[2]).map(w=>tok(w,"")).join("")}</div>`:""}
+    <div class="two"><button class="pickbtn b" data-a="be" ${A?"disabled":""}>be동사<small>am · is · are · was · were</small></button>
+    <button class="pickbtn g" data-a="gen" ${A?"disabled":""}>일반동사<small>play · like · eat · go …</small></button></div>`;
+  }else if(q.type==="fill"){
+    body=`<p class="ask">빈칸에 들어갈 말을 골라 줘</p>
+    <div class="sent">${words(q.s).map(w=>tok(w,"s")).join("")}${A?tok(q.a,vcls(q.a)):`<span class="tok"><span class="w blank">?</span></span>`}${words(q.r).map(w=>tok(w,"")).join("")}</div>
+    <div class="opts">${q.order.map(o=>`<button class="opt" data-a="${esc(o)}" ${A?"disabled":""}>${esc(o)}</button>`).join("")}</div>`;
+  }else{
+    body=`<p class="ask">빼야 할 단어를 눌러 줘. 바른 문장이면 아래 버튼!</p>
+    <div class="sent">${q.w.map((w,k)=>tok(w,A?(k===q.bad?"x":k===0?"s":vcls(w)):"",`data-k="${k}" ${A?"disabled":""}`)).join("")}</div>
+    <button class="okb" data-k="-1" ${A?"disabled":""}>바른 문장이에요!</button>`;
+  }
+  $("#quizView").innerHTML=head+body+(A?st.fb:"");
+}
+function answer(val){
+  if(st.answered) return;
+  const q=st.qs[st.i];let ok,qText,mine,right;
+  const L=t=>t==="be"?"be동사":"일반동사";
+  if(q.type==="when"){ok=val===q.t;qText=q.ko.replace(/<\/?u>/g,"")+" → "+q.en.join(" ");mine=L(val);right=L(q.t);}
+  else if(q.type==="fill"){ok=val===q.a;qText=`${q.s} ___ ${q.r}`;mine=val;right=q.a;}
+  else{const k=+val;ok=k===q.bad;qText=q.w.join(" ");mine=k===-1?"바른 문장":`'${q.w[k]}' 빼기`;right=q.bad===-1?"바른 문장":`'${q.w[q.bad]}' 빼기 → ${q.fix}`;}
+  st.answered=true;st.res[st.i]=ok;
+  if(!ok){notes.unshift({q:qText,mine,right,why:q.why});renderNotes();}
+  st.fb=`<div class="fb ${ok?"good":"oops"}"><b>${ok?pick(["정답!","맞았어!","딩동댕!"]):pick(["아깝다!","괜찮아, 다시 보자!"])}</b>
+   ${ok?"":`<p>정답: <strong>${esc(right)}</strong></p>`}<p>${esc(q.why)}</p>${q.type==="fix"&&q.bad!==-1?`<p>바른 문장: <strong>${esc(q.fix)}</strong></p>`:""}</div>
+   <button class="next" id="next">${st.i===2?"결과 보기":"다음 문제"}</button>`;
+  renderQuiz();
+  if(!ok){const v=$("#quizView");v.classList.remove("wob");void v.offsetWidth;v.classList.add("wob");}
+  $("#next")?.focus();
+}
+function next(){
+  if(st.i<2){st.i++;st.answered=false;opened.clear();return renderQuiz();}
+  const n=st.res.filter(Boolean).length;
+  if(n>=2){const first=!coll[st.id];coll[st.id]=(coll[st.id]||0)+1;save();const id=st.id;toDex();showCatch(id,first);}
+  else{st.done=true;renderQuiz();}
+}
+function failView(){
+  const n=st.res.filter(Boolean).length,m=MON[st.id];
+  return `<div class="result"><img src="${m.img}" alt=""><h2>앗, 포켓몬이 도망갔다!</h2><p style="margin:0">3문제 중 ${n}개 정답 · 2개 맞히면 잡을 수 있어</p>
+  <p style="margin:0;color:var(--muted)">틀린 문제는 왼쪽 아래 '다시 볼 문제'에서 확인해 봐.</p>
+  <div class="row"><button class="next" id="retry">다시 도전</button><button class="ghost" id="back2">도감으로</button></div></div>`;
+}
+
+/* ── 포획 연출 ── */
+let catchTimer;
+function showCatch(id,first){
+  document.querySelector(".catch")?.remove();clearTimeout(catchTimer);
+  const m=MON[id],el=document.createElement("div");
+  el.className="catch";el.setAttribute("role","dialog");el.setAttribute("aria-label",m.nm+" 포획");
+  el.innerHTML=`<div class="burst"></div><div class="in"><span class="new">${first?"NEW! 도감 등록":"또 잡았다 ×"+coll[id]}</span>
+   <img src="${m.img}" alt="${esc(m.nm)}"><span class="pno">${no(id)}</span><span class="pnm">${esc(m.nm)}</span><span class="tap">화면을 누르면 닫혀요</span></div>`;
+  const onKey=e=>{if(e.key==="Escape")close()};
+  const close=()=>{el.remove();clearTimeout(catchTimer);document.removeEventListener("keydown",onKey)};
+  el.addEventListener("click",close);document.addEventListener("keydown",onKey);
+  document.body.appendChild(el);catchTimer=setTimeout(close,2800);
+}
+
+/* ── 다시 볼 문제 ── */
+function renderNotes(){
+  $("#drawer").hidden=!notes.length;$("#ncnt").textContent=notes.length;
+  $("#notes").innerHTML=notes.map(n=>`<div class="note"><span class="q">${esc(n.q)}</span><span class="m">내 답: ${esc(n.mine)}</span><span>정답: <strong>${esc(n.right)}</strong></span><span class="m">${esc(n.why)}</span></div>`).join("");
+}
+
+/* ── 게임 설명 ── */
+const HELP_TEXT="이 게임은 영어 문장을 만들 때 be동사를 쓸지, 일반동사를 쓸지 고르는 연습이에요. 도감에서 잡고 싶은 포켓몬을 누르고, 문제 세 개 중 두 개 이상 맞히면 포켓몬을 잡을 수 있어요. 기분, 모습, 신분, 위치를 말할 때는 be동사, 몸이나 마음으로 하는 행동은 일반동사예요. 한 문장에 동사는 하나만!";
+function openHelp(){$("#help").hidden=false;$("#helpClose").focus();}
+function closeHelp(){$("#help").hidden=true;try{speechSynthesis.cancel()}catch(e){}}
+
+/* ── 이벤트 ── */
+$("#dex").addEventListener("click",e=>{const b=e.target.closest(".mon");if(b)start(+b.dataset.id)});
+$("#quizView").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||b.disabled)return;
+  if(b.dataset.mean!==undefined){opened.add(b.dataset.mean);return renderQuiz();}
+  if(b.id==="back"||b.id==="back2")return toDex();
+  if(b.id==="retry")return start(st.id);
+  if(b.id==="next")return next();
+  if(b.dataset.a!==undefined)return answer(b.dataset.a);
+  if(b.dataset.k!==undefined)return answer(b.dataset.k);
+});
+$("#dbtn").addEventListener("click",()=>{$("#dpanel").hidden=!$("#dpanel").hidden});
+$("#helpBtn").addEventListener("click",openHelp);
+$("#helpClose").addEventListener("click",closeHelp);
+$("#help").addEventListener("click",e=>{if(e.target.id==="help")closeHelp()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#help").hidden)closeHelp()});
+$("#speak").addEventListener("click",()=>{
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(HELP_TEXT);u.lang="ko-KR";u.rate=1;speechSynthesis.speak(u);}catch(e){}
+});
+
+renderDex();renderNotes();loadPokemon();
+})();
+</script>
+</body>
+</html>
